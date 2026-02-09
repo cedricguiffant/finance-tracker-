@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
@@ -10,6 +11,7 @@ import Sources from './pages/Sources';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
 
   return (
     <div className="app-layout">
@@ -26,6 +28,7 @@ export default function App() {
           </Routes>
         </main>
       </div>
+      <BottomNav currentPath={location.pathname} />
     </div>
   );
 }
