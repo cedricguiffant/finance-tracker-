@@ -427,6 +427,16 @@
   padding: 14px;
 }
 
+.news-item.clickable {
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.news-item.clickable:active {
+  background: var(--bg-input);
+  transform: scale(0.99);
+}
+
 .news-header {
   display: flex;
   align-items: center;
@@ -466,6 +476,16 @@
   font-size: 0.9rem;
   line-height: 1.3;
   margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.news-arrow {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .news-snippet {

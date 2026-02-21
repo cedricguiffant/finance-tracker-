@@ -1,57 +1,66 @@
 import { useState, useEffect } from 'react'
+import { Browser } from '@capacitor/browser'
 import './App.css'
+
+const openArticle = async (url) => {
+  try {
+    await Browser.open({ url })
+  } catch {
+    window.open(url, '_blank')
+  }
+}
 
 const NEWS_DATABASE = {
   'AAPL': [
-    { source: 'Bloomberg', title: "Apple depasse les attentes avec l'iPhone 17", date: '20 fev 2026', snippet: "Les ventes du nouvel iPhone propulsent le chiffre d'affaires au-dela des previsions des analystes." },
-    { source: 'Reuters', title: 'Apple accelere dans l\'IA generative', date: '18 fev 2026', snippet: "Le geant californien annonce de nouvelles fonctionnalites IA integrees a iOS 20." },
+    { source: 'Bloomberg', title: "Apple depasse les attentes avec l'iPhone 17", date: '20 fev 2026', snippet: "Les ventes du nouvel iPhone propulsent le chiffre d'affaires au-dela des previsions des analystes.", url: 'https://www.bloomberg.com/quote/AAPL:US' },
+    { source: 'Reuters', title: 'Apple accelere dans l\'IA generative', date: '18 fev 2026', snippet: "Le geant californien annonce de nouvelles fonctionnalites IA integrees a iOS 20.", url: 'https://www.reuters.com/technology/apple/' },
   ],
   'MSFT': [
-    { source: 'CNBC', title: 'Microsoft Azure : croissance de 35% au dernier trimestre', date: '19 fev 2026', snippet: "Le cloud continue de tirer la croissance de Microsoft avec des revenus records." },
-    { source: 'Les Echos', title: 'Microsoft investit 10 milliards dans Copilot', date: '17 fev 2026', snippet: "L'assistant IA Copilot s'etend a tous les produits de la suite Office." },
+    { source: 'CNBC', title: 'Microsoft Azure : croissance de 35% au dernier trimestre', date: '19 fev 2026', snippet: "Le cloud continue de tirer la croissance de Microsoft avec des revenus records.", url: 'https://www.cnbc.com/quotes/MSFT' },
+    { source: 'Les Echos', title: 'Microsoft investit 10 milliards dans Copilot', date: '17 fev 2026', snippet: "L'assistant IA Copilot s'etend a tous les produits de la suite Office.", url: 'https://www.lesechos.fr/tech-medias/hightech/microsoft' },
   ],
   'GOOGL': [
-    { source: 'TechCrunch', title: 'Alphabet : Gemini 3 revolutionne la recherche', date: '20 fev 2026', snippet: "Google lance une nouvelle version de son modele IA avec des performances inedites." },
-    { source: 'Capital', title: 'Google Cloud gagne des parts de marche', date: '16 fev 2026', snippet: "Google Cloud se rapproche d'AWS et Azure dans le classement mondial du cloud." },
+    { source: 'TechCrunch', title: 'Alphabet : Gemini 3 revolutionne la recherche', date: '20 fev 2026', snippet: "Google lance une nouvelle version de son modele IA avec des performances inedites.", url: 'https://techcrunch.com/tag/google/' },
+    { source: 'Capital', title: 'Google Cloud gagne des parts de marche', date: '16 fev 2026', snippet: "Google Cloud se rapproche d'AWS et Azure dans le classement mondial du cloud.", url: 'https://www.capital.fr/entreprises-marches/alphabet-google' },
   ],
   'AMZN': [
-    { source: 'Bloomberg', title: 'Amazon Prime atteint 300 millions d\'abonnes', date: '19 fev 2026', snippet: "Le service d'abonnement d'Amazon franchit un cap historique dans le monde." },
-    { source: 'BFM Business', title: 'AWS lance de nouveaux services IA', date: '15 fev 2026', snippet: "Amazon Web Services etoffe son offre d'intelligence artificielle pour les entreprises." },
+    { source: 'Bloomberg', title: 'Amazon Prime atteint 300 millions d\'abonnes', date: '19 fev 2026', snippet: "Le service d'abonnement d'Amazon franchit un cap historique dans le monde.", url: 'https://www.bloomberg.com/quote/AMZN:US' },
+    { source: 'BFM Business', title: 'AWS lance de nouveaux services IA', date: '15 fev 2026', snippet: "Amazon Web Services etoffe son offre d'intelligence artificielle pour les entreprises.", url: 'https://www.bfmtv.com/economie/entreprises/amazon/' },
   ],
   'TSLA': [
-    { source: 'Reuters', title: 'Tesla : le Model Y reste le vehicule le plus vendu au monde', date: '20 fev 2026', snippet: "Pour la troisieme annee consecutive, le SUV electrique domine les ventes mondiales." },
-    { source: 'Les Echos', title: 'Tesla devoile sa nouvelle Gigafactory en France', date: '14 fev 2026', snippet: "Elon Musk confirme l'implantation d'une usine dans le nord de la France." },
+    { source: 'Reuters', title: 'Tesla : le Model Y reste le vehicule le plus vendu au monde', date: '20 fev 2026', snippet: "Pour la troisieme annee consecutive, le SUV electrique domine les ventes mondiales.", url: 'https://www.reuters.com/business/autos-transportation/tesla/' },
+    { source: 'Les Echos', title: 'Tesla devoile sa nouvelle Gigafactory en France', date: '14 fev 2026', snippet: "Elon Musk confirme l'implantation d'une usine dans le nord de la France.", url: 'https://www.lesechos.fr/industrie-services/automobile/tesla' },
   ],
   'MC.PA': [
-    { source: 'Les Echos', title: 'LVMH : resultats record portes par le luxe asiatique', date: '19 fev 2026', snippet: "Le groupe de Bernard Arnault affiche une croissance de 15% en Asie-Pacifique." },
-    { source: 'Capital', title: 'LVMH acquiert une nouvelle maison de joaillerie', date: '16 fev 2026', snippet: "Le conglomerat du luxe poursuit sa strategie d'acquisitions avec une marque italienne." },
+    { source: 'Les Echos', title: 'LVMH : resultats record portes par le luxe asiatique', date: '19 fev 2026', snippet: "Le groupe de Bernard Arnault affiche une croissance de 15% en Asie-Pacifique.", url: 'https://www.lesechos.fr/industrie-services/mode-luxe/lvmh' },
+    { source: 'Capital', title: 'LVMH acquiert une nouvelle maison de joaillerie', date: '16 fev 2026', snippet: "Le conglomerat du luxe poursuit sa strategie d'acquisitions avec une marque italienne.", url: 'https://www.capital.fr/entreprises-marches/lvmh' },
   ],
   'OR.PA': [
-    { source: 'Boursorama', title: "L'Oreal mise sur la beaute connectee", date: '18 fev 2026', snippet: "Le leader mondial des cosmetiques lance une gamme de produits avec diagnostic IA." },
-    { source: 'BFM Business', title: "L'Oreal : forte croissance en Amerique du Nord", date: '13 fev 2026', snippet: "Les marques du groupe progressent de 12% sur le marche americain." },
+    { source: 'Boursorama', title: "L'Oreal mise sur la beaute connectee", date: '18 fev 2026', snippet: "Le leader mondial des cosmetiques lance une gamme de produits avec diagnostic IA.", url: 'https://www.boursorama.com/cours/OR.PA/' },
+    { source: 'BFM Business', title: "L'Oreal : forte croissance en Amerique du Nord", date: '13 fev 2026', snippet: "Les marques du groupe progressent de 12% sur le marche americain.", url: 'https://www.bfmtv.com/economie/entreprises/l-oreal/' },
   ],
   'NVDA': [
-    { source: 'CNBC', title: 'Nvidia : le GPU B300 domine le marche de l\'IA', date: '20 fev 2026', snippet: "La nouvelle puce de Nvidia s'arrache aupres des datacenters du monde entier." },
-    { source: 'Bloomberg', title: 'Nvidia franchit les 5 000 milliards de capitalisation', date: '17 fev 2026', snippet: "Le fabricant de GPU devient la deuxieme entreprise la plus valorisee au monde." },
+    { source: 'CNBC', title: 'Nvidia : le GPU B300 domine le marche de l\'IA', date: '20 fev 2026', snippet: "La nouvelle puce de Nvidia s'arrache aupres des datacenters du monde entier.", url: 'https://www.cnbc.com/quotes/NVDA' },
+    { source: 'Bloomberg', title: 'Nvidia franchit les 5 000 milliards de capitalisation', date: '17 fev 2026', snippet: "Le fabricant de GPU devient la deuxieme entreprise la plus valorisee au monde.", url: 'https://www.bloomberg.com/quote/NVDA:US' },
   ],
   'META': [
-    { source: 'TechCrunch', title: 'Meta : le metavers genere enfin des revenus', date: '18 fev 2026', snippet: "Reality Labs affiche son premier trimestre rentable grace aux casques Quest 4." },
-    { source: 'Reuters', title: 'Instagram depasse 3 milliards d\'utilisateurs', date: '15 fev 2026', snippet: "La plateforme photo de Meta atteint un nouveau record d'audience mondiale." },
+    { source: 'TechCrunch', title: 'Meta : le metavers genere enfin des revenus', date: '18 fev 2026', snippet: "Reality Labs affiche son premier trimestre rentable grace aux casques Quest 4.", url: 'https://techcrunch.com/tag/meta/' },
+    { source: 'Reuters', title: 'Instagram depasse 3 milliards d\'utilisateurs', date: '15 fev 2026', snippet: "La plateforme photo de Meta atteint un nouveau record d'audience mondiale.", url: 'https://www.reuters.com/technology/meta/' },
   ],
   'AI.PA': [
-    { source: 'Les Echos', title: "Air Liquide accelere dans l'hydrogene vert", date: '19 fev 2026', snippet: "Le groupe francais investit massivement dans les energies propres en Europe." },
-    { source: 'Boursorama', title: 'Air Liquide releve ses objectifs annuels', date: '14 fev 2026', snippet: "Le specialiste des gaz industriels revoit ses previsions a la hausse." },
+    { source: 'Les Echos', title: "Air Liquide accelere dans l'hydrogene vert", date: '19 fev 2026', snippet: "Le groupe francais investit massivement dans les energies propres en Europe.", url: 'https://www.lesechos.fr/industrie-services/energie-environnement/air-liquide' },
+    { source: 'Boursorama', title: 'Air Liquide releve ses objectifs annuels', date: '14 fev 2026', snippet: "Le specialiste des gaz industriels revoit ses previsions a la hausse.", url: 'https://www.boursorama.com/cours/AI.PA/' },
   ],
   'SAN.PA': [
-    { source: 'Capital', title: 'Sanofi : un nouveau traitement contre le cancer approuve', date: '20 fev 2026', snippet: "Le laboratoire francais obtient le feu vert de la FDA pour son immunotherapie." },
-    { source: 'BFM Business', title: 'Sanofi en hausse apres ses resultats', date: '16 fev 2026', snippet: "L'action du groupe pharmaceutique gagne 5% a l'ouverture de la Bourse de Paris." },
+    { source: 'Capital', title: 'Sanofi : un nouveau traitement contre le cancer approuve', date: '20 fev 2026', snippet: "Le laboratoire francais obtient le feu vert de la FDA pour son immunotherapie.", url: 'https://www.capital.fr/entreprises-marches/sanofi' },
+    { source: 'BFM Business', title: 'Sanofi en hausse apres ses resultats', date: '16 fev 2026', snippet: "L'action du groupe pharmaceutique gagne 5% a l'ouverture de la Bourse de Paris.", url: 'https://www.bfmtv.com/economie/entreprises/sanofi/' },
   ],
 }
 
 const GENERAL_NEWS = [
-  { source: 'Les Echos', title: 'Le CAC 40 atteint un nouveau record historique', date: '21 fev 2026', snippet: "L'indice parisien continue sa progression portee par les valeurs technologiques et le luxe." },
-  { source: 'BFM Bourse', title: 'La BCE maintient ses taux directeurs', date: '20 fev 2026', snippet: "La Banque centrale europeenne a decide de maintenir ses taux inchanges lors de sa derniere reunion." },
-  { source: 'Reuters', title: 'Wall Street : le S&P 500 en hausse de 1,2%', date: '19 fev 2026', snippet: "Les marches americains terminent la semaine en forte hausse grace aux resultats technologiques." },
+  { source: 'Les Echos', title: 'Le CAC 40 atteint un nouveau record historique', date: '21 fev 2026', snippet: "L'indice parisien continue sa progression portee par les valeurs technologiques et le luxe.", url: 'https://www.lesechos.fr/finance-marches/marches-financiers' },
+  { source: 'BFM Bourse', title: 'La BCE maintient ses taux directeurs', date: '20 fev 2026', snippet: "La Banque centrale europeenne a decide de maintenir ses taux inchanges lors de sa derniere reunion.", url: 'https://www.tradingsat.com/actualites/marches-financiers/' },
+  { source: 'Reuters', title: 'Wall Street : le S&P 500 en hausse de 1,2%', date: '19 fev 2026', snippet: "Les marches americains terminent la semaine en forte hausse grace aux resultats technologiques.", url: 'https://www.reuters.com/markets/' },
 ]
 
 function formatCurrency(amount) {
@@ -286,13 +295,13 @@ function App() {
                 </div>
                 <div className="news-list">
                   {portfolioNews.slice(0, 3).map((news, i) => (
-                    <div key={i} className="news-item">
+                    <div key={i} className="news-item clickable" onClick={() => openArticle(news.url)}>
                       <div className="news-header">
                         <span className="news-badge">{news.symbol}</span>
                         <span className="news-source">{news.source}</span>
                         <span className="news-date">{news.date}</span>
                       </div>
-                      <div className="news-title">{news.title}</div>
+                      <div className="news-title">{news.title}<span className="news-arrow">{'\u203A'}</span></div>
                       <div className="news-snippet">{news.snippet}</div>
                     </div>
                   ))}
@@ -316,13 +325,13 @@ function App() {
                 <h3 className="section-title">Marches</h3>
                 <div className="news-list">
                   {GENERAL_NEWS.map((news, i) => (
-                    <div key={`gen-${i}`} className="news-item">
+                    <div key={`gen-${i}`} className="news-item clickable" onClick={() => openArticle(news.url)}>
                       <div className="news-header">
                         <span className="news-badge market">Marche</span>
                         <span className="news-source">{news.source}</span>
                         <span className="news-date">{news.date}</span>
                       </div>
-                      <div className="news-title">{news.title}</div>
+                      <div className="news-title">{news.title}<span className="news-arrow">{'\u203A'}</span></div>
                       <div className="news-snippet">{news.snippet}</div>
                     </div>
                   ))}
@@ -334,13 +343,13 @@ function App() {
                     <h3 className="section-title">Vos actions</h3>
                     <div className="news-list">
                       {portfolioNews.map((news, i) => (
-                        <div key={`pf-${i}`} className="news-item">
+                        <div key={`pf-${i}`} className="news-item clickable" onClick={() => openArticle(news.url)}>
                           <div className="news-header">
                             <span className="news-badge">{news.symbol}</span>
                             <span className="news-source">{news.source}</span>
                             <span className="news-date">{news.date}</span>
                           </div>
-                          <div className="news-title">{news.title}</div>
+                          <div className="news-title">{news.title}<span className="news-arrow">{'\u203A'}</span></div>
                           <div className="news-snippet">{news.snippet}</div>
                         </div>
                       ))}
@@ -434,12 +443,12 @@ function App() {
               {stockNews.length > 0 ? (
                 <div className="news-list">
                   {stockNews.map((news, i) => (
-                    <div key={i} className="news-item">
+                    <div key={i} className="news-item clickable" onClick={() => openArticle(news.url)}>
                       <div className="news-header">
                         <span className="news-source">{news.source}</span>
                         <span className="news-date">{news.date}</span>
                       </div>
-                      <div className="news-title">{news.title}</div>
+                      <div className="news-title">{news.title}<span className="news-arrow">{'\u203A'}</span></div>
                       <div className="news-snippet">{news.snippet}</div>
                     </div>
                   ))}
