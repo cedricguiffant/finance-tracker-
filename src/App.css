@@ -43,6 +43,31 @@
 .header-gain.up { color: #6ee7b7; }
 .header-gain.down { color: #fca5a5; }
 
+.header-update {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .header-count {
   font-size: 1.4rem;
   font-weight: 700;

@@ -63,8 +63,22 @@ const GENERAL_NEWS = [
   { source: 'Reuters', title: 'Wall Street : le S&P 500 en hausse de 1,2%', date: '19 fev 2026', snippet: "Les marches americains terminent la semaine en forte hausse grace aux resultats technologiques.", url: 'https://www.reuters.com/markets/' },
 ]
 
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)
+async function fetchStockPrice(symbol) {
+  const res = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`
+  )
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = await res.json()
+  const meta = data.chart.result[0].meta
+  return {
+    price: meta.regularMarketPrice,
+    previousClose: meta.chartPreviousClose,
+    currency: meta.currency,
+  }
+}
+
+function formatCurrency(amount, currency = 'EUR') {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount)
 }
 
 function formatPercent(value) {
@@ -76,6 +90,8 @@ function App() {
   const [page, setPage] = useState('portfolio')
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedStock, setSelectedStock] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState(null)
 
   const [portfolio, setPortfolio] = useState(() => {
     const saved = localStorage.getItem('ft_portfolio')
@@ -92,7 +108,34 @@ function App() {
     localStorage.setItem('ft_portfolio', JSON.stringify(portfolio))
   }, [portfolio])
 
-  const addStock = (e) => {
+  // Fetch real prices for all stocks in portfolio
+  const refreshPrices = async () => {
+    if (portfolio.length === 0) return
+    setLoading(true)
+    const updated = [...portfolio]
+    for (const stock of updated) {
+      try {
+        const data = await fetchStockPrice(stock.symbol)
+        stock.currentPrice = data.price
+        stock.change = ((data.price - data.previousClose) / data.previousClose) * 100
+        stock.currency = data.currency
+      } catch {
+        // Keep existing price on error
+      }
+    }
+    setPortfolio(updated)
+    setLastUpdate(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
+    setLoading(false)
+  }
+
+  // Fetch prices on mount and when portfolio changes (new stock added)
+  useEffect(() => {
+    if (portfolio.length > 0) {
+      refreshPrices()
+    }
+  }, [portfolio.length])
+
+  const addStock = async (e) => {
     e.preventDefault()
     if (!stockSymbol || !stockName || !stockShares || !stockBuyPrice) return
     const sym = stockSymbol.toUpperCase().trim()
@@ -100,16 +143,28 @@ function App() {
     if (existing) return
 
     const buyPrice = parseFloat(stockBuyPrice)
-    const randomChange = (Math.random() * 6 - 2).toFixed(2)
-    const currentPrice = (buyPrice * (1 + parseFloat(randomChange) / 100)).toFixed(2)
+
+    // Fetch real current price
+    let currentPrice = buyPrice
+    let change = 0
+    let currency = 'USD'
+    try {
+      const data = await fetchStockPrice(sym)
+      currentPrice = data.price
+      change = ((data.price - data.previousClose) / data.previousClose) * 100
+      currency = data.currency
+    } catch {
+      // Use buy price as fallback
+    }
 
     const newStock = {
       symbol: sym,
       name: stockName.trim(),
       shares: parseInt(stockShares),
       buyPrice: buyPrice,
-      currentPrice: parseFloat(currentPrice),
-      change: parseFloat(randomChange),
+      currentPrice: currentPrice,
+      change: change,
+      currency: currency,
       addedDate: new Date().toLocaleDateString('fr-FR'),
     }
     setPortfolio([...portfolio, newStock])
@@ -161,9 +216,13 @@ function App() {
         {page === 'portfolio' && portfolio.length > 0 && (
           <>
             <div className="balance-label">Valeur du portfolio</div>
-            <div className="balance">{formatCurrency(portfolioTotal)}</div>
+            <div className="balance">{formatCurrency(portfolioTotal, 'USD')}</div>
             <div className={`header-gain ${portfolioGain >= 0 ? 'up' : 'down'}`}>
-              {portfolioGain >= 0 ? '+' : ''}{formatCurrency(portfolioGain)} ({formatPercent(portfolioGainPct)})
+              {portfolioGain >= 0 ? '+' : ''}{formatCurrency(portfolioGain, 'USD')} ({formatPercent(portfolioGainPct)})
+            </div>
+            <div className="header-update">
+              {loading ? 'Mise a jour...' : lastUpdate ? `Cours a ${lastUpdate}` : ''}
+              {!loading && <button className="refresh-btn" onClick={refreshPrices}>{'\u21BB'}</button>}
             </div>
           </>
         )}
@@ -192,12 +251,12 @@ function App() {
         <div className="summary">
           <div className="summary-card">
             <div className="label">Investi</div>
-            <div className="amount">{formatCurrency(portfolioInvested)}</div>
+            <div className="amount">{formatCurrency(portfolioInvested, 'USD')}</div>
           </div>
           <div className="summary-card">
             <div className="label">+/- Value</div>
             <div className={`amount ${portfolioGain >= 0 ? 'income' : 'expense'}`}>
-              {portfolioGain >= 0 ? '+' : ''}{formatCurrency(portfolioGain)}
+              {portfolioGain >= 0 ? '+' : ''}{formatCurrency(portfolioGain, 'USD')}
             </div>
           </div>
           <div className="summary-card">
@@ -259,6 +318,7 @@ function App() {
             ) : (
               <div className="portfolio-list">
                 {portfolio.map(stock => {
+                  const cur = stock.currency || 'USD'
                   const totalValue = stock.currentPrice * stock.shares
                   const totalInvested = stock.buyPrice * stock.shares
                   const gain = totalValue - totalInvested
@@ -272,12 +332,12 @@ function App() {
                       </div>
                       <div className="stock-info">
                         <div className="name">{stock.name}</div>
-                        <div className="shares">{stock.shares} actions @ {formatCurrency(stock.buyPrice)}</div>
+                        <div className="shares">{stock.shares} actions @ {formatCurrency(stock.buyPrice, cur)}</div>
                       </div>
                       <div className="stock-values">
-                        <div className="price">{formatCurrency(totalValue)}</div>
-                        <div className={`change ${gain >= 0 ? 'up' : 'down'}`}>
-                          {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({formatPercent(gainPct)})
+                        <div className="price">{formatCurrency(stock.currentPrice, cur)}</div>
+                        <div className={`change ${stock.change >= 0 ? 'up' : 'down'}`}>
+                          {formatPercent(stock.change)} aujourd'hui
                         </div>
                       </div>
                     </div>
@@ -373,6 +433,7 @@ function App() {
         {page === 'detail' && selectedStock && (() => {
           const stock = portfolio.find(s => s.symbol === selectedStock)
           if (!stock) return null
+          const cur = stock.currency || 'USD'
           const totalValue = stock.currentPrice * stock.shares
           const totalInvested = stock.buyPrice * stock.shares
           const gain = totalValue - totalInvested
@@ -393,12 +454,12 @@ function App() {
                   </div>
                   <div className="detail-title">
                     <div className="detail-name">{stock.name}</div>
-                    <div className="detail-symbol">{stock.symbol}</div>
+                    <div className="detail-symbol">{stock.symbol} - {cur}</div>
                   </div>
                 </div>
 
                 <div className="detail-price-row">
-                  <div className="detail-current-price">{formatCurrency(stock.currentPrice)}</div>
+                  <div className="detail-current-price">{formatCurrency(stock.currentPrice, cur)}</div>
                   <div className={`detail-change ${stock.change >= 0 ? 'up' : 'down'}`}>
                     {formatPercent(stock.change)} aujourd'hui
                   </div>
@@ -411,20 +472,20 @@ function App() {
                   </div>
                   <div className="stat">
                     <div className="stat-label">Prix d'achat</div>
-                    <div className="stat-value">{formatCurrency(stock.buyPrice)}</div>
+                    <div className="stat-value">{formatCurrency(stock.buyPrice, cur)}</div>
                   </div>
                   <div className="stat">
                     <div className="stat-label">Valeur totale</div>
-                    <div className="stat-value">{formatCurrency(totalValue)}</div>
+                    <div className="stat-value">{formatCurrency(totalValue, cur)}</div>
                   </div>
                   <div className="stat">
                     <div className="stat-label">Investissement</div>
-                    <div className="stat-value">{formatCurrency(totalInvested)}</div>
+                    <div className="stat-value">{formatCurrency(totalInvested, cur)}</div>
                   </div>
                   <div className="stat full-width">
                     <div className="stat-label">Plus/Moins value</div>
                     <div className={`stat-value ${gain >= 0 ? 'up' : 'down'}`}>
-                      {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({formatPercent(gainPct)})
+                      {gain >= 0 ? '+' : ''}{formatCurrency(gain, cur)} ({formatPercent(gainPct)})
                     </div>
                   </div>
                   <div className="stat full-width">
