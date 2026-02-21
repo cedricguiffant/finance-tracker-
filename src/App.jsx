@@ -1,285 +1,463 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
-const CATEGORIES = {
-  income: ['Salaire', 'Freelance', 'Investissement', 'Vente', 'Autre'],
-  expense: ['Alimentation', 'Transport', 'Logement', 'Loisirs', 'Sante', 'Shopping', 'Factures', 'Autre']
+const NEWS_DATABASE = {
+  'AAPL': [
+    { source: 'Bloomberg', title: "Apple depasse les attentes avec l'iPhone 17", date: '20 fev 2026', snippet: "Les ventes du nouvel iPhone propulsent le chiffre d'affaires au-dela des previsions des analystes." },
+    { source: 'Reuters', title: 'Apple accelere dans l\'IA generative', date: '18 fev 2026', snippet: "Le geant californien annonce de nouvelles fonctionnalites IA integrees a iOS 20." },
+  ],
+  'MSFT': [
+    { source: 'CNBC', title: 'Microsoft Azure : croissance de 35% au dernier trimestre', date: '19 fev 2026', snippet: "Le cloud continue de tirer la croissance de Microsoft avec des revenus records." },
+    { source: 'Les Echos', title: 'Microsoft investit 10 milliards dans Copilot', date: '17 fev 2026', snippet: "L'assistant IA Copilot s'etend a tous les produits de la suite Office." },
+  ],
+  'GOOGL': [
+    { source: 'TechCrunch', title: 'Alphabet : Gemini 3 revolutionne la recherche', date: '20 fev 2026', snippet: "Google lance une nouvelle version de son modele IA avec des performances inedites." },
+    { source: 'Capital', title: 'Google Cloud gagne des parts de marche', date: '16 fev 2026', snippet: "Google Cloud se rapproche d'AWS et Azure dans le classement mondial du cloud." },
+  ],
+  'AMZN': [
+    { source: 'Bloomberg', title: 'Amazon Prime atteint 300 millions d\'abonnes', date: '19 fev 2026', snippet: "Le service d'abonnement d'Amazon franchit un cap historique dans le monde." },
+    { source: 'BFM Business', title: 'AWS lance de nouveaux services IA', date: '15 fev 2026', snippet: "Amazon Web Services etoffe son offre d'intelligence artificielle pour les entreprises." },
+  ],
+  'TSLA': [
+    { source: 'Reuters', title: 'Tesla : le Model Y reste le vehicule le plus vendu au monde', date: '20 fev 2026', snippet: "Pour la troisieme annee consecutive, le SUV electrique domine les ventes mondiales." },
+    { source: 'Les Echos', title: 'Tesla devoile sa nouvelle Gigafactory en France', date: '14 fev 2026', snippet: "Elon Musk confirme l'implantation d'une usine dans le nord de la France." },
+  ],
+  'MC.PA': [
+    { source: 'Les Echos', title: 'LVMH : resultats record portes par le luxe asiatique', date: '19 fev 2026', snippet: "Le groupe de Bernard Arnault affiche une croissance de 15% en Asie-Pacifique." },
+    { source: 'Capital', title: 'LVMH acquiert une nouvelle maison de joaillerie', date: '16 fev 2026', snippet: "Le conglomerat du luxe poursuit sa strategie d'acquisitions avec une marque italienne." },
+  ],
+  'OR.PA': [
+    { source: 'Boursorama', title: "L'Oreal mise sur la beaute connectee", date: '18 fev 2026', snippet: "Le leader mondial des cosmetiques lance une gamme de produits avec diagnostic IA." },
+    { source: 'BFM Business', title: "L'Oreal : forte croissance en Amerique du Nord", date: '13 fev 2026', snippet: "Les marques du groupe progressent de 12% sur le marche americain." },
+  ],
+  'NVDA': [
+    { source: 'CNBC', title: 'Nvidia : le GPU B300 domine le marche de l\'IA', date: '20 fev 2026', snippet: "La nouvelle puce de Nvidia s'arrache aupres des datacenters du monde entier." },
+    { source: 'Bloomberg', title: 'Nvidia franchit les 5 000 milliards de capitalisation', date: '17 fev 2026', snippet: "Le fabricant de GPU devient la deuxieme entreprise la plus valorisee au monde." },
+  ],
+  'META': [
+    { source: 'TechCrunch', title: 'Meta : le metavers genere enfin des revenus', date: '18 fev 2026', snippet: "Reality Labs affiche son premier trimestre rentable grace aux casques Quest 4." },
+    { source: 'Reuters', title: 'Instagram depasse 3 milliards d\'utilisateurs', date: '15 fev 2026', snippet: "La plateforme photo de Meta atteint un nouveau record d'audience mondiale." },
+  ],
+  'AI.PA': [
+    { source: 'Les Echos', title: "Air Liquide accelere dans l'hydrogene vert", date: '19 fev 2026', snippet: "Le groupe francais investit massivement dans les energies propres en Europe." },
+    { source: 'Boursorama', title: 'Air Liquide releve ses objectifs annuels', date: '14 fev 2026', snippet: "Le specialiste des gaz industriels revoit ses previsions a la hausse." },
+  ],
+  'SAN.PA': [
+    { source: 'Capital', title: 'Sanofi : un nouveau traitement contre le cancer approuve', date: '20 fev 2026', snippet: "Le laboratoire francais obtient le feu vert de la FDA pour son immunotherapie." },
+    { source: 'BFM Business', title: 'Sanofi en hausse apres ses resultats', date: '16 fev 2026', snippet: "L'action du groupe pharmaceutique gagne 5% a l'ouverture de la Bourse de Paris." },
+  ],
 }
 
-const CATEGORY_ICONS = {
-  Salaire: '\u{1F4B0}', Freelance: '\u{1F4BB}', Investissement: '\u{1F4C8}', Vente: '\u{1F4B5}',
-  Alimentation: '\u{1F6D2}', Transport: '\u{1F697}', Logement: '\u{1F3E0}', Loisirs: '\u{1F3AE}',
-  Sante: '\u{2764}', Shopping: '\u{1F6CD}', Factures: '\u{1F4C4}', Autre: '\u{1F4CC}'
-}
-
-const SAMPLE_NEWS = [
-  { source: 'Les Echos', title: 'Le CAC 40 atteint un nouveau record historique', date: '15 fev 2026', snippet: 'L\'indice parisien continue sa progression portee par les valeurs technologiques et le luxe.' },
-  { source: 'BFM Bourse', title: 'La BCE maintient ses taux directeurs', date: '14 fev 2026', snippet: 'La Banque centrale europeenne a decide de maintenir ses taux inchanges lors de sa derniere reunion.' },
-  { source: 'Capital', title: 'Les meilleures actions a suivre en 2026', date: '13 fev 2026', snippet: 'Notre selection des valeurs les plus prometteuses pour cette annee.' },
-  { source: 'Boursorama', title: 'Resultats trimestriels : les entreprises du CAC 40', date: '12 fev 2026', snippet: 'Tour d\'horizon des publications de resultats des grandes entreprises francaises.' },
-]
-
-const SAMPLE_PORTFOLIO = [
-  { symbol: 'AAPL', name: 'Apple Inc.', shares: 10, price: 242.50, change: 1.8 },
-  { symbol: 'MSFT', name: 'Microsoft Corp.', shares: 5, price: 468.20, change: -0.5 },
-  { symbol: 'MC.PA', name: 'LVMH', shares: 3, price: 892.40, change: 2.3 },
-  { symbol: 'OR.PA', name: "L'Oreal", shares: 8, price: 412.60, change: 0.7 },
+const GENERAL_NEWS = [
+  { source: 'Les Echos', title: 'Le CAC 40 atteint un nouveau record historique', date: '21 fev 2026', snippet: "L'indice parisien continue sa progression portee par les valeurs technologiques et le luxe." },
+  { source: 'BFM Bourse', title: 'La BCE maintient ses taux directeurs', date: '20 fev 2026', snippet: "La Banque centrale europeenne a decide de maintenir ses taux inchanges lors de sa derniere reunion." },
+  { source: 'Reuters', title: 'Wall Street : le S&P 500 en hausse de 1,2%', date: '19 fev 2026', snippet: "Les marches americains terminent la semaine en forte hausse grace aux resultats technologiques." },
 ]
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)
 }
 
+function formatPercent(value) {
+  const sign = value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(2)}%`
+}
+
 function App() {
-  const [page, setPage] = useState('dashboard')
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('ft_transactions')
-    return saved ? JSON.parse(saved) : []
-  })
+  const [page, setPage] = useState('portfolio')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [selectedStock, setSelectedStock] = useState(null)
+
   const [portfolio, setPortfolio] = useState(() => {
     const saved = localStorage.getItem('ft_portfolio')
-    return saved ? JSON.parse(saved) : SAMPLE_PORTFOLIO
+    return saved ? JSON.parse(saved) : []
   })
 
-  // Form state
-  const [txType, setTxType] = useState('expense')
-  const [txName, setTxName] = useState('')
-  const [txAmount, setTxAmount] = useState('')
-  const [txCategory, setTxCategory] = useState('')
-
-  // Portfolio form
+  // Add stock form
   const [stockSymbol, setStockSymbol] = useState('')
   const [stockName, setStockName] = useState('')
   const [stockShares, setStockShares] = useState('')
-  const [stockPrice, setStockPrice] = useState('')
-
-  useEffect(() => {
-    localStorage.setItem('ft_transactions', JSON.stringify(transactions))
-  }, [transactions])
+  const [stockBuyPrice, setStockBuyPrice] = useState('')
 
   useEffect(() => {
     localStorage.setItem('ft_portfolio', JSON.stringify(portfolio))
   }, [portfolio])
 
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  const balance = totalIncome - totalExpense
-
-  const addTransaction = (e) => {
-    e.preventDefault()
-    if (!txName || !txAmount || !txCategory) return
-    const newTx = {
-      id: Date.now(),
-      type: txType,
-      name: txName,
-      amount: parseFloat(txAmount),
-      category: txCategory,
-      date: new Date().toLocaleDateString('fr-FR')
-    }
-    setTransactions([newTx, ...transactions])
-    setTxName('')
-    setTxAmount('')
-    setTxCategory('')
-  }
-
-  const deleteTransaction = (id) => {
-    setTransactions(transactions.filter(t => t.id !== id))
-  }
-
   const addStock = (e) => {
     e.preventDefault()
-    if (!stockSymbol || !stockName || !stockShares || !stockPrice) return
+    if (!stockSymbol || !stockName || !stockShares || !stockBuyPrice) return
+    const sym = stockSymbol.toUpperCase().trim()
+    const existing = portfolio.find(s => s.symbol === sym)
+    if (existing) return
+
+    const buyPrice = parseFloat(stockBuyPrice)
+    const randomChange = (Math.random() * 6 - 2).toFixed(2)
+    const currentPrice = (buyPrice * (1 + parseFloat(randomChange) / 100)).toFixed(2)
+
     const newStock = {
-      symbol: stockSymbol.toUpperCase(),
-      name: stockName,
+      symbol: sym,
+      name: stockName.trim(),
       shares: parseInt(stockShares),
-      price: parseFloat(stockPrice),
-      change: 0
+      buyPrice: buyPrice,
+      currentPrice: parseFloat(currentPrice),
+      change: parseFloat(randomChange),
+      addedDate: new Date().toLocaleDateString('fr-FR'),
     }
     setPortfolio([...portfolio, newStock])
     setStockSymbol('')
     setStockName('')
     setStockShares('')
-    setStockPrice('')
+    setStockBuyPrice('')
+    setShowAddForm(false)
   }
 
   const deleteStock = (symbol) => {
     setPortfolio(portfolio.filter(s => s.symbol !== symbol))
+    if (selectedStock === symbol) setSelectedStock(null)
   }
 
-  const portfolioTotal = portfolio.reduce((s, st) => s + st.price * st.shares, 0)
+  const portfolioTotal = portfolio.reduce((s, st) => s + st.currentPrice * st.shares, 0)
+  const portfolioInvested = portfolio.reduce((s, st) => s + st.buyPrice * st.shares, 0)
+  const portfolioGain = portfolioTotal - portfolioInvested
+  const portfolioGainPct = portfolioInvested > 0 ? (portfolioGain / portfolioInvested) * 100 : 0
+
+  // Build news based on portfolio
+  const getPortfolioNews = () => {
+    const news = []
+    for (const stock of portfolio) {
+      const stockNews = NEWS_DATABASE[stock.symbol]
+      if (stockNews) {
+        stockNews.forEach(n => news.push({ ...n, symbol: stock.symbol, stockName: stock.name }))
+      }
+    }
+    news.sort((a, b) => {
+      const dateA = a.date.split(' ')
+      const dateB = b.date.split(' ')
+      return parseInt(dateB[0]) - parseInt(dateA[0])
+    })
+    return news
+  }
+
+  const getStockNews = (symbol) => {
+    return NEWS_DATABASE[symbol] || []
+  }
+
+  const portfolioNews = getPortfolioNews()
 
   return (
     <div className="app">
       {/* Header */}
       <div className="header">
         <h1>Finance Tracker</h1>
-        <div className="balance-label">
-          {page === 'portfolio' ? 'Valeur du portfolio' : 'Solde total'}
-        </div>
-        <div className="balance">
-          {page === 'portfolio' ? formatCurrency(portfolioTotal) : formatCurrency(balance)}
-        </div>
+        {page === 'portfolio' && portfolio.length > 0 && (
+          <>
+            <div className="balance-label">Valeur du portfolio</div>
+            <div className="balance">{formatCurrency(portfolioTotal)}</div>
+            <div className={`header-gain ${portfolioGain >= 0 ? 'up' : 'down'}`}>
+              {portfolioGain >= 0 ? '+' : ''}{formatCurrency(portfolioGain)} ({formatPercent(portfolioGainPct)})
+            </div>
+          </>
+        )}
+        {page === 'portfolio' && portfolio.length === 0 && (
+          <>
+            <div className="balance-label">Commencez par ajouter des actions</div>
+            <div className="balance">{formatCurrency(0)}</div>
+          </>
+        )}
+        {page === 'news' && (
+          <>
+            <div className="balance-label">Actualites de vos actions</div>
+            <div className="header-count">{portfolioNews.length} articles</div>
+          </>
+        )}
+        {page === 'detail' && selectedStock && (
+          <>
+            <div className="balance-label">{portfolio.find(s => s.symbol === selectedStock)?.name}</div>
+            <div className="balance">{portfolio.find(s => s.symbol === selectedStock)?.symbol}</div>
+          </>
+        )}
       </div>
 
-      {/* Summary - only on dashboard */}
-      {page === 'dashboard' && (
+      {/* Summary cards on portfolio page */}
+      {page === 'portfolio' && portfolio.length > 0 && (
         <div className="summary">
           <div className="summary-card">
-            <div className="label">Revenus</div>
-            <div className="amount income">{formatCurrency(totalIncome)}</div>
+            <div className="label">Investi</div>
+            <div className="amount">{formatCurrency(portfolioInvested)}</div>
           </div>
           <div className="summary-card">
-            <div className="label">Depenses</div>
-            <div className="amount expense">{formatCurrency(totalExpense)}</div>
+            <div className="label">+/- Value</div>
+            <div className={`amount ${portfolioGain >= 0 ? 'income' : 'expense'}`}>
+              {portfolioGain >= 0 ? '+' : ''}{formatCurrency(portfolioGain)}
+            </div>
+          </div>
+          <div className="summary-card">
+            <div className="label">Actions</div>
+            <div className="amount">{portfolio.length}</div>
           </div>
         </div>
       )}
 
       {/* Content */}
       <div className="content">
-        {/* Dashboard */}
-        {page === 'dashboard' && (
-          <>
-            <h3 className="section-title">Ajouter une transaction</h3>
-            <form className="add-form" onSubmit={addTransaction}>
-              <div className="type-toggle">
-                <button type="button" className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`}
-                  onClick={() => { setTxType('expense'); setTxCategory('') }}>
-                  Depense
-                </button>
-                <button type="button" className={`type-btn ${txType === 'income' ? 'active-income' : ''}`}
-                  onClick={() => { setTxType('income'); setTxCategory('') }}>
-                  Revenu
-                </button>
-              </div>
-              <div className="form-row">
-                <input type="text" placeholder="Description" value={txName}
-                  onChange={e => setTxName(e.target.value)} />
-              </div>
-              <div className="form-row">
-                <input type="number" placeholder="Montant" step="0.01" min="0" value={txAmount}
-                  onChange={e => setTxAmount(e.target.value)} />
-                <select value={txCategory} onChange={e => setTxCategory(e.target.value)}>
-                  <option value="">Categorie</option>
-                  {CATEGORIES[txType].map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <button type="submit" className="submit-btn"
-                disabled={!txName || !txAmount || !txCategory}>
-                Ajouter
-              </button>
-            </form>
 
-            <h3 className="section-title">Transactions recentes</h3>
-            {transactions.length === 0 ? (
-              <div className="empty-state">
-                <div className="icon">{'\u{1F4B3}'}</div>
-                <p>Aucune transaction pour le moment</p>
-              </div>
-            ) : (
-              <div className="transaction-list">
-                {transactions.map(tx => (
-                  <div key={tx.id} className="transaction-item">
-                    <div className={`transaction-icon ${tx.type}`}>
-                      {CATEGORY_ICONS[tx.category] || '\u{1F4CC}'}
-                    </div>
-                    <div className="transaction-info">
-                      <div className="name">{tx.name}</div>
-                      <div className="category">{tx.category}</div>
-                      <div className="date">{tx.date}</div>
-                    </div>
-                    <div className={`transaction-amount ${tx.type}`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
-                    </div>
-                    <button className="delete-btn" onClick={() => deleteTransaction(tx.id)}>{'\u2715'}</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Portfolio */}
+        {/* Portfolio page */}
         {page === 'portfolio' && (
           <>
-            <h3 className="section-title">Ajouter une action</h3>
-            <form className="portfolio-form" onSubmit={addStock}>
-              <div className="form-row">
-                <input type="text" placeholder="Symbole (ex: AAPL)" value={stockSymbol}
-                  onChange={e => setStockSymbol(e.target.value)} />
-                <input type="text" placeholder="Nom" value={stockName}
-                  onChange={e => setStockName(e.target.value)} />
-              </div>
-              <div className="form-row">
-                <input type="number" placeholder="Nombre" min="1" value={stockShares}
-                  onChange={e => setStockShares(e.target.value)} />
-                <input type="number" placeholder="Prix" step="0.01" min="0" value={stockPrice}
-                  onChange={e => setStockPrice(e.target.value)} />
-              </div>
-              <button type="submit" className="submit-btn"
-                disabled={!stockSymbol || !stockName || !stockShares || !stockPrice}>
-                Ajouter au portfolio
+            {/* Add button */}
+            {!showAddForm && (
+              <button className="add-stock-btn" onClick={() => setShowAddForm(true)}>
+                + Ajouter une action
               </button>
-            </form>
+            )}
 
+            {/* Add form */}
+            {showAddForm && (
+              <div className="add-form">
+                <div className="form-header">
+                  <h3>Ajouter une action</h3>
+                  <button className="close-btn" onClick={() => setShowAddForm(false)}>{'\u2715'}</button>
+                </div>
+                <form onSubmit={addStock}>
+                  <div className="form-row">
+                    <input type="text" placeholder="Symbole (ex: AAPL)" value={stockSymbol}
+                      onChange={e => setStockSymbol(e.target.value)} />
+                    <input type="text" placeholder="Nom de l'entreprise" value={stockName}
+                      onChange={e => setStockName(e.target.value)} />
+                  </div>
+                  <div className="form-row">
+                    <input type="number" placeholder="Nb d'actions" min="1" value={stockShares}
+                      onChange={e => setStockShares(e.target.value)} />
+                    <input type="number" placeholder="Prix d'achat" step="0.01" min="0" value={stockBuyPrice}
+                      onChange={e => setStockBuyPrice(e.target.value)} />
+                  </div>
+                  <button type="submit" className="submit-btn"
+                    disabled={!stockSymbol || !stockName || !stockShares || !stockBuyPrice}>
+                    Ajouter au portfolio
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Stock list */}
             <h3 className="section-title">Mon Portfolio</h3>
             {portfolio.length === 0 ? (
               <div className="empty-state">
-                <div className="icon">{'\u{1F4CA}'}</div>
-                <p>Votre portfolio est vide</p>
+                <div className="icon">{'\u{1F4C8}'}</div>
+                <p>Ajoutez des actions pour suivre votre portfolio</p>
+                <p className="empty-hint">Appuyez sur "+ Ajouter une action" pour commencer</p>
               </div>
             ) : (
               <div className="portfolio-list">
-                {portfolio.map(stock => (
-                  <div key={stock.symbol} className="stock-item">
-                    <div className="stock-symbol">{stock.symbol}</div>
-                    <div className="stock-info">
-                      <div className="name">{stock.name}</div>
-                      <div className="shares">{stock.shares} actions</div>
-                    </div>
-                    <div className="stock-values">
-                      <div className="price">{formatCurrency(stock.price)}</div>
-                      <div className={`change ${stock.change >= 0 ? 'up' : 'down'}`}>
-                        {stock.change >= 0 ? '+' : ''}{stock.change}%
+                {portfolio.map(stock => {
+                  const totalValue = stock.currentPrice * stock.shares
+                  const totalInvested = stock.buyPrice * stock.shares
+                  const gain = totalValue - totalInvested
+                  const gainPct = (gain / totalInvested) * 100
+
+                  return (
+                    <div key={stock.symbol} className="stock-item"
+                      onClick={() => { setSelectedStock(stock.symbol); setPage('detail') }}>
+                      <div className={`stock-symbol-badge ${stock.change >= 0 ? 'up' : 'down'}`}>
+                        {stock.symbol.substring(0, 4)}
+                      </div>
+                      <div className="stock-info">
+                        <div className="name">{stock.name}</div>
+                        <div className="shares">{stock.shares} actions @ {formatCurrency(stock.buyPrice)}</div>
+                      </div>
+                      <div className="stock-values">
+                        <div className="price">{formatCurrency(totalValue)}</div>
+                        <div className={`change ${gain >= 0 ? 'up' : 'down'}`}>
+                          {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({formatPercent(gainPct)})
+                        </div>
                       </div>
                     </div>
-                    <button className="delete-btn" onClick={() => deleteStock(stock.symbol)}>{'\u2715'}</button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
+            )}
+
+            {/* Recent news preview */}
+            {portfolio.length > 0 && portfolioNews.length > 0 && (
+              <>
+                <div className="section-title-row">
+                  <h3 className="section-title">Dernieres actualites</h3>
+                  <button className="see-all-btn" onClick={() => setPage('news')}>Tout voir</button>
+                </div>
+                <div className="news-list">
+                  {portfolioNews.slice(0, 3).map((news, i) => (
+                    <div key={i} className="news-item">
+                      <div className="news-header">
+                        <span className="news-badge">{news.symbol}</span>
+                        <span className="news-source">{news.source}</span>
+                        <span className="news-date">{news.date}</span>
+                      </div>
+                      <div className="news-title">{news.title}</div>
+                      <div className="news-snippet">{news.snippet}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}
 
-        {/* News */}
+        {/* News page */}
         {page === 'news' && (
           <>
-            <h3 className="section-title">Actualites financieres</h3>
-            <div className="news-list">
-              {SAMPLE_NEWS.map((news, i) => (
-                <div key={i} className="news-item">
-                  <div className="news-source">{news.source}</div>
-                  <div className="news-title">{news.title}</div>
-                  <div className="news-date">{news.date}</div>
-                  <div className="news-snippet">{news.snippet}</div>
+            {portfolioNews.length === 0 && portfolio.length === 0 ? (
+              <div className="empty-state">
+                <div className="icon">{'\u{1F4F0}'}</div>
+                <p>Ajoutez des actions a votre portfolio pour voir les actualites associees</p>
+              </div>
+            ) : (
+              <>
+                {/* General market news */}
+                <h3 className="section-title">Marches</h3>
+                <div className="news-list">
+                  {GENERAL_NEWS.map((news, i) => (
+                    <div key={`gen-${i}`} className="news-item">
+                      <div className="news-header">
+                        <span className="news-badge market">Marche</span>
+                        <span className="news-source">{news.source}</span>
+                        <span className="news-date">{news.date}</span>
+                      </div>
+                      <div className="news-title">{news.title}</div>
+                      <div className="news-snippet">{news.snippet}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+
+                {/* Portfolio-specific news */}
+                {portfolioNews.length > 0 && (
+                  <>
+                    <h3 className="section-title">Vos actions</h3>
+                    <div className="news-list">
+                      {portfolioNews.map((news, i) => (
+                        <div key={`pf-${i}`} className="news-item">
+                          <div className="news-header">
+                            <span className="news-badge">{news.symbol}</span>
+                            <span className="news-source">{news.source}</span>
+                            <span className="news-date">{news.date}</span>
+                          </div>
+                          <div className="news-title">{news.title}</div>
+                          <div className="news-snippet">{news.snippet}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {portfolioNews.length === 0 && (
+                  <div className="empty-state" style={{ paddingTop: '20px' }}>
+                    <div className="icon">{'\u{1F50D}'}</div>
+                    <p>Aucune actualite trouvee pour vos actions</p>
+                    <p className="empty-hint">Les actualites apparaitront ici quand des articles concernent vos titres</p>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
+
+        {/* Stock detail page */}
+        {page === 'detail' && selectedStock && (() => {
+          const stock = portfolio.find(s => s.symbol === selectedStock)
+          if (!stock) return null
+          const totalValue = stock.currentPrice * stock.shares
+          const totalInvested = stock.buyPrice * stock.shares
+          const gain = totalValue - totalInvested
+          const gainPct = (gain / totalInvested) * 100
+          const stockNews = getStockNews(stock.symbol)
+
+          return (
+            <>
+              <button className="back-btn" onClick={() => setPage('portfolio')}>
+                {'\u2190'} Retour au portfolio
+              </button>
+
+              {/* Stock overview card */}
+              <div className="detail-card">
+                <div className="detail-header">
+                  <div className={`stock-symbol-badge large ${stock.change >= 0 ? 'up' : 'down'}`}>
+                    {stock.symbol.substring(0, 4)}
+                  </div>
+                  <div className="detail-title">
+                    <div className="detail-name">{stock.name}</div>
+                    <div className="detail-symbol">{stock.symbol}</div>
+                  </div>
+                </div>
+
+                <div className="detail-price-row">
+                  <div className="detail-current-price">{formatCurrency(stock.currentPrice)}</div>
+                  <div className={`detail-change ${stock.change >= 0 ? 'up' : 'down'}`}>
+                    {formatPercent(stock.change)} aujourd'hui
+                  </div>
+                </div>
+
+                <div className="detail-stats">
+                  <div className="stat">
+                    <div className="stat-label">Quantite</div>
+                    <div className="stat-value">{stock.shares} actions</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-label">Prix d'achat</div>
+                    <div className="stat-value">{formatCurrency(stock.buyPrice)}</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-label">Valeur totale</div>
+                    <div className="stat-value">{formatCurrency(totalValue)}</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-label">Investissement</div>
+                    <div className="stat-value">{formatCurrency(totalInvested)}</div>
+                  </div>
+                  <div className="stat full-width">
+                    <div className="stat-label">Plus/Moins value</div>
+                    <div className={`stat-value ${gain >= 0 ? 'up' : 'down'}`}>
+                      {gain >= 0 ? '+' : ''}{formatCurrency(gain)} ({formatPercent(gainPct)})
+                    </div>
+                  </div>
+                  <div className="stat full-width">
+                    <div className="stat-label">Date d'ajout</div>
+                    <div className="stat-value">{stock.addedDate}</div>
+                  </div>
+                </div>
+
+                <button className="delete-stock-btn" onClick={() => { deleteStock(stock.symbol); setPage('portfolio') }}>
+                  Retirer du portfolio
+                </button>
+              </div>
+
+              {/* Stock news */}
+              <h3 className="section-title">Actualites - {stock.name}</h3>
+              {stockNews.length > 0 ? (
+                <div className="news-list">
+                  {stockNews.map((news, i) => (
+                    <div key={i} className="news-item">
+                      <div className="news-header">
+                        <span className="news-source">{news.source}</span>
+                        <span className="news-date">{news.date}</span>
+                      </div>
+                      <div className="news-title">{news.title}</div>
+                      <div className="news-snippet">{news.snippet}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="icon">{'\u{1F4F0}'}</div>
+                  <p>Aucune actualite disponible pour {stock.symbol}</p>
+                </div>
+              )}
+            </>
+          )
+        })()}
       </div>
 
       {/* Bottom Navigation */}
       <nav className="bottom-nav">
-        <button className={`nav-item ${page === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setPage('dashboard')}>
-          <span className="nav-icon">{'\u{1F4B3}'}</span>
-          Transactions
-        </button>
-        <button className={`nav-item ${page === 'portfolio' ? 'active' : ''}`}
+        <button className={`nav-item ${page === 'portfolio' || page === 'detail' ? 'active' : ''}`}
           onClick={() => setPage('portfolio')}>
           <span className="nav-icon">{'\u{1F4CA}'}</span>
           Portfolio
