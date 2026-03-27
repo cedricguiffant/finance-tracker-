@@ -1,0 +1,14 @@
+{
+  "appId": "com.financetracker.app",
+  "appName": "FinanceTracker",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#0a0e1a",
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
